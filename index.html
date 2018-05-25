@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
+    <meta content="yes" name="apple-mobile-web-app-capable" />
+    <meta content="black" name="apple-mobile-web-app-status-bar-style" />
+    <meta content="telephone=no" name="format-detection" />
+    <title>Document</title>
+    <style>
+        *{ padding: 0; margin: 0; box-sizing: border-box}
+        em,i{ font-style: normal}
+        ul,li{ list-style: none}
+        .video-box{ width: 800px; height: 500px; position: relative; margin: 0 auto; overflow: hidden; cursor: default;}
+        .video-box video{ width: 100%; height: 100%;}
+        .video-box .control-set{ position: absolute;bottom: -100px; transform: translate(0,0); left: 0; width: 100%; transition: all .5s}
+        .video-box .control-ant{bottom:0;transform: translate(0,0);}
+        .video-box .control-box{z-index:2147483648; text-align: center; font-size: 12px; color: #ffffff; position: absolute; width: 100%; height: 80px; background: #393939; bottom: 0; left: 0; padding: 16px 40px; display: flex; flex-direction: row}
+        .video-box .play-btn{ margin: 0 40px 0 0; width: 48px; height: 48px;text-indent: -500px; overflow: hidden; float: left; display: block; background: url("./img/play.png") no-repeat; background-size: 48px 48px; }
+        .video-box .stop-btn{background: url("./img/stop.png") no-repeat; background-size: 48px 48px;}
+        .video-box .tim-box{ padding: 0 20px; float: left;}
+        .video-box .tim-box .current-tim{ margin: 0}
+        .video-box .tim-box .total-tim{ margin: 0;color: #00ff00}
+        .video-box .audio-btn{margin: 0 10px 0 0; width: 30px; height: 30px; background: #0000ff; float: left; display: block}
+        .video-box .fullscreen{margin: 0 10px 0 0; width: 30px; height: 30px; background: #0000ff; float: left; display: block}
+        video::-webkit-media-controls{ display:none !important;}
+        video::-webkit-media-controls-enclosure {display: none !important;}
+        .video-box .progress-box{ flex: 1; padding: 17px 0 0 0}
+        .video-box .progress-pos{ padding: 0 16px; position: relative; height: 6px; background: #393939; border-radius: 3px}
+        .video-box .progress-box .progress-bg{ position: relative; height: 6px; background: #ffffff; border-radius: 3px}
+        .video-box .progress-box .progress-current{border-radius: 3px; width: 0; background: #FFD810;height: 6px; position: absolute; top: 0; left: 0; z-index: 10;}
+        .video-box .progress-box .play-dot{ display: block; height: 32px; width: 32px; background: url('./img/dot.png') no-repeat; background-size:32px 32px; position: absolute; left: 0px; top:-11px; z-index: 50;}
+        .video-box .time-dot-box{position: absolute; height: 6px; border-radius: 3px; width: 100%;z-index: 11; top: 0; left: 0}
+        .video-box .time-dot{height: 6px; width: 10px; background: #FFD810;position: absolute;border-radius: 3px; }
+        .video-box .time-dot-sty{ background: #ffffff}
+        .video-box .progress-txt{position: absolute; height: 15px; line-height: 15px; color: #ffffff; width: 100%; top: 17px; left: 0; font-size: 12px;}
+        .video-box .progress-txt-sty{position: absolute; height: 15px; line-height: 15px; top: 0}
+    </style>
+</head>
+<body>
+    <div class="video-box" id="videoBox">
+        <video>
+            <source src="./img/car_1.mp4"></source>
+        </video>
+        <div class="control-set">
+                <div class="control-box">
+                        <span class="play-btn" >播放</span>
+                            <div class="progress-box">
+                                <div class="progress-pos">
+                                    <div class="progress-bg">
+                                        <div class="time-dot-box"></div>
+                                        <div class="progress-current"></div>
+                                        <div class="progress-txt"></div>
+                                    </div>
+                                    <i class="play-dot"></i>
+                                </div>
+                            </div>
+                        <!-- <span class="tim-box">
+                            <em class="current-tim"></em>/<em class="total-tim" ></em>
+                        </span>
+                        <span class="audio-btn">
+                            静音
+                        </span> -->
+                        <!-- <span class="fullscreen"> 
+                            全屏
+                        </span> -->
+                </div>
+        </div>
+    </div>
+
+
+
+<script>
+window.onload=function(){
+
+    let dat=[
+        {
+            "name":"亮点",
+            "time":0
+        },
+        {
+            "name":"外观",
+            "time":40
+        },
+        {
+            "name":"空间",
+            "time":100
+        },
+        {
+            "name":"内饰",
+            "time":150
+        },
+        {
+            "name":"动力",
+            "time":180
+        }
+    ]
+
+    let v1=new Videofun("videoBox")
+    v1.init(dat)
+
+    setInterval(function(){
+        console.log(v1.outputDat())
+    },1000)
+}
+
+function Videofun(video){
+    this.mainContainer=document.querySelector("#"+video)
+    this.oV=this.mainContainer.querySelectorAll("video")[0]
+    this.timer=null
+    this.dotDiv=[]
+}
+Videofun.prototype.init=function(dat){
+    this._playFun()
+    this._progressFun()
+    this._setTimeDot(dat)
+    this._jumpTime()
+    this._controlBox()
+}
+Videofun.prototype.outputDat=function(){
+    return this.oV.currentTime
+}
+Videofun.prototype._controlBox=function(){
+    let controlSet=this.mainContainer.querySelectorAll(".control-set")[0]
+    let _this=this
+    this.mainContainer.onmouseenter=function(){
+        _this._addClass(controlSet,"control-ant")
+    }
+    this.mainContainer.onmouseleave=function(){
+        _this._removeClass(controlSet,"control-ant")
+    }
+}
+Videofun.prototype._setTimeDot=function(dat){
+    let timDotBox=this.mainContainer.querySelectorAll(".time-dot-box")[0]
+    let arrTXTpos=[]
+    let _this=this
+    dat.forEach((item,index)=>{
+        let divObj=document.createElement("div")
+        let lef=item.time/_this.oV.duration*timDotBox.offsetWidth
+        divObj.className="time-dot"
+        divObj.style.left=lef+"px"
+        arrTXTpos.push(lef)
+        _this.dotDiv.push(divObj)
+        timDotBox.appendChild(divObj)
+    })
+    _this._setTxtFun(arrTXTpos,dat)
+}
+
+Videofun.prototype._jumpTime=function(){
+    let progressWarp=this.mainContainer.querySelectorAll(".progress-bg")[0]
+    let dotBtn=this.mainContainer.querySelectorAll(".play-dot")[0]
+    let progressBox=this.mainContainer.querySelectorAll(".progress-current")[0]
+    let _this=this
+    progressWarp.onclick=function(e){
+        let ev = e || window.event
+        let lef=ev.clientX-_this._getPosition(progressWarp)[0]
+        dotBtn.style.left=lef+"px"
+        progressBox.style.width=lef+"px"
+        let scale=lef/progressWarp.offsetWidth
+        _this.oV.currentTime = scale * _this.oV.duration
+        _this.outputDat()
+        _this._nowTime()
+    }
+}
+Videofun.prototype._setTxtFun=function(arr,dat){
+    let progressTxt=this.mainContainer.querySelectorAll(".progress-txt")[0]
+    dat.forEach((item,index)=>{
+        let divObj=document.createElement("div")
+        divObj.className="progress-txt-sty"
+        divObj.style.left=arr[index]-6+"px"
+        divObj.innerHTML=item.name
+        progressTxt.appendChild(divObj)
+    })
+}
+Videofun.prototype._playFun=function(){
+    let playBtn=this.mainContainer.querySelectorAll(".play-btn")[0]
+    let _this=this
+    playBtn.onclick=function(){
+        _this._playStopFun()
+    }
+}
+Videofun.prototype._playStopFun=function(){
+    let playBtn=this.mainContainer.querySelectorAll(".play-btn")[0]
+    let _this=this
+    if(_this.oV.paused){
+        _this.oV.play()
+        playBtn.innerHTML="暂停"
+        _this._addClass(playBtn,"stop-btn")
+        clearInterval(_this.timer)
+        _this.timer=setInterval(function(){
+            _this._nowTime()
+        },1000)
+    }else{
+        _this.oV.pause()
+        playBtn.innerHTML="播放"
+        _this._removeClass(playBtn,"stop-btn")
+        clearInterval(_this.timer)
+    }
+}
+
+Videofun.prototype._progressFun=function(){
+
+    let dotBtn=this.mainContainer.querySelectorAll(".play-dot")[0]
+    let progressWarp=this.mainContainer.querySelectorAll(".progress-bg")[0]
+    let progressBox=this.mainContainer.querySelectorAll(".progress-current")[0]
+    let progressPos=this.mainContainer.querySelectorAll(".progress-pos")[0]
+    let playBtn=this.mainContainer.querySelectorAll(".play-btn")[0]
+    let _this=this
+    let dotLeft=dotBtn.offsetLeft
+    dotBtn.onmousedown = function(e){
+        let ev = e || window.event
+        let disX=ev.clientX-dotBtn.offsetLeft
+        document.onmousemove = function(e){
+            let ev = e || window.event
+            let L = ev.clientX - disX;
+            if(L<=0){
+                L = 0;
+            }
+            else if(L>=(progressPos.offsetWidth - dotBtn.offsetWidth)){
+                L = (progressPos.offsetWidth - dotBtn.offsetWidth)
+            }
+            dotBtn.style.left = L + 'px'
+            progressBox.style.width=L+'px'
+            let scale = L/(progressPos.offsetWidth - dotBtn.offsetWidth)
+            _this.oV.currentTime = scale * _this.oV.duration
+            _this.outputDat()
+            _this._nowTime()
+            if(_this.oV.currentTime==_this.oV.duration){
+                playBtn.innerHTML="播放"
+                _this._removeClass(playBtn,"stop-btn")
+                clearInterval(_this.timer)
+            }
+        };
+        document.onmouseup = function(){
+            document.onmousemove = null
+        };
+        return false
+    }
+}
+
+Videofun.prototype._fullScreenFun=function(){
+    let fullScreenBtn=this.mainContainer.querySelectorAll(".fullscreen")[0]
+    let _this=this
+    fullScreenBtn.onclick=function(){
+        _this.oV.webkitRequestFullScreen()
+    }
+}
+Videofun.prototype._audioFun=function(){                                        //声音
+    let audioBtn=this.mainContainer.querySelectorAll(".audio-btn")[0]
+    let _this=this
+    audioBtn.onclick=function(){
+        if(_this.oV.muted){
+            _this.oV.volume=1
+            audioBtn.innerHTML="静音"
+            _this.oV.muted=!_this.oV.muted
+        }else{
+            _this.oV.volume=0
+            audioBtn.innerHTML="取消静音"
+            _this.oV.muted=!_this.oV.muted
+        }
+    }
+}
+Videofun.prototype._getTotalTime=function(){                                            //总时间
+    let totalTim=this.mainContainer.querySelectorAll(".total-tim")[0]
+    let _this=this
+    totalTim.innerHTML=_this._timSetFun(_this.oV.duration)
+}
+Videofun.prototype._nowTime=function(){                                                 //当前时间
+    let currentTim=this.mainContainer.querySelectorAll(".current-tim")[0]
+    let progressWarp=this.mainContainer.querySelectorAll(".progress-bg")[0]
+    let dotBtn=this.mainContainer.querySelectorAll(".play-dot")[0]
+    let progressBox=this.mainContainer.querySelectorAll(".progress-current")[0]
+    let progressPos=this.mainContainer.querySelectorAll(".progress-pos")[0]
+    let playBtn=this.mainContainer.querySelectorAll(".play-btn")[0]
+    var scale = this.oV.currentTime/this.oV.duration;
+    let _this=this
+    dotBtn.style.left = scale * (progressPos.offsetWidth-dotBtn.offsetWidth)+ 'px'
+    progressBox.style.width=scale * (progressPos.offsetWidth-dotBtn.offsetWidth) + 'px'
+    _this.outputDat()
+    _this.dotDiv.forEach((item,index)=>{
+        if(dotBtn.offsetLeft>item.offsetLeft && index!==0){
+            item.className="time-dot time-dot-sty"
+        }else{
+            item.className="time-dot"
+        }
+    })
+    if(_this.oV.currentTime==_this.oV.duration){
+        _this.oV.currentTime=0
+        dotBtn.style.left=0
+        progressBox.style.width=0
+        playBtn.innerHTML="播放"
+        _this._removeClass(playBtn,"stop-btn")
+        _this.dotDiv.forEach((item,index)=>{
+            item.className="time-dot"
+        })
+        clearInterval(_this.timer)
+    }
+}
+Videofun.prototype._timSetFun=function(tim){
+    let iNum=parseInt(tim)
+    let iH=toZero(Math.floor(iNum/3600))
+    let iM=toZero(Math.floor(iNum%3600/60))
+    let iS=toZero(Math.floor(iNum%60))
+    return iH+":"+iM+":"+iS
+    function toZero(num){
+        if(num<=9) return '0' + num
+        else return '' + num
+    }
+}
+Videofun.prototype._addClass=function(el,cls){
+	var arrCls=cls.split(/ +/);
+	if(el.className){
+		for(var i=0;i<arrCls.length;i++){
+			if(this._hasClass(el,cls)){
+				cls=cls.replace(new RegExp('(^| +)'+arrCls[i]+'( +|$)'),' ');
+			}
+		}
+		el.className=[el.className].concat(cls).join(' ');
+	}
+	else{
+		el.className=cls;
+	}
+}
+Videofun.prototype._removeClass=function(el,cls){
+	if(!cls){
+		el.className='';
+	}else if(this._hasClass(el,cls)){
+		el.className=el.className.replace(new RegExp('(^| +)'+cls+'( +|$)','g'),' ');
+	}
+}
+
+Videofun.prototype._hasClass=function(el,cls){
+	var className = typeof(el) == 'string' && el || el.className;
+	if(!className||!cls)
+		return false;
+	var cls=cls.split(/[\. ]+/);
+	var re;
+	for(var i=cls.length-1;i>=0;i--){
+		re=new RegExp('(^| +)'+cls[i]+'( +|$)');
+		if(!re.test(className))
+			return false;
+	}
+	return true;
+}
+Videofun.prototype._getPosition=function(obj){
+    let position = [0,0]; 
+    while(obj.offsetParent){         
+        position[0] += obj.offsetLeft; 
+        position[1] += obj.offsetTop;
+        obj = obj.offsetParent; 
+    } 
+    position[0] + document.body.offsetLeft;
+    position[1] + document.body.offsetTop;
+    return position;		
+}
+
+
+
+
+</script>
+
+
+</body>
+</html>
